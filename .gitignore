@@ -1,2 +1,7 @@
-__pycache__
-env
+Code/__pycache__
+Code/env
+Data/BreastDCEDL_spy1.zip
+Data/BreastDCEDL_spy1/spt1_dce
+Data/BreastDCEDL_spy1/spy1_mask
+Data/BreastDCEDL_spy1/croppedPhases.npz
+Data/BreastDCEDL_spy1/desktop.ini
