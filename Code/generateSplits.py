@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-metadata = pd.read_csv("BreastDCEDL_spy1_metadata.csv")
+metadata = pd.read_csv("Data/BreastDCEDL_spy1/BreastDCEDL_spy1_metadata.csv")
 
 
 def generateSplits(metadata:pd.DataFrame,test_size,max_pids=None,seed=42):

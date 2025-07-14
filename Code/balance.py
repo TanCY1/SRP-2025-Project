@@ -20,7 +20,7 @@ def printClosest(ar1, ar2, m, n):
             j += 1
     print(f"Closest pair: {closest_pair} with difference {min_diff}")
 
-metadata = pd.read_csv("BreastDCEDL_spy1_metadata.csv")
+metadata = pd.read_csv("Data/BreastDCEDL_spy1/BreastDCEDL_spy1_metadata.csv")
 
 count0 = metadata.pCR.value_counts()[0]
 count1 = metadata.pCR.value_counts()[1]
