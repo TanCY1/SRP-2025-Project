@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-metadata = pd.read_csv("Data/BreastDCEDL_spy1/BreastDCEDL_spy1_metadata.csv")
+metadata = pd.read_csv("Datasets/BreastDCEDL_spy1/BreastDCEDL_spy1_metadata.csv")
 
 
 def generateSplits(metadata:pd.DataFrame,test_size,max_pids=None,seed=42):
@@ -26,9 +26,10 @@ def generateSplits(metadata:pd.DataFrame,test_size,max_pids=None,seed=42):
 def main():
     train_df, test_df = generateSplits(metadata,0.2,max_pids=10)
     #print(train_df.columns)
-    train_df = train_df[["pid","pCR","ER","PR","HER2"]]
-    test_df = test_df[["pid","pCR","ER","PR","HER2"]]
+    train_df = train_df[["pid","pCR","ER","PR","HER2"]].set_index("pid",drop=True)
+    test_df = test_df[["pid","pCR","ER","PR","HER2"]].set_index("pid",drop=True)
+    train_df.to_json("models/10_Sample_Test_Trial/train_metadata.json",orient="index",indent=4)
+    train_df.to_json("models/10_Sample_Test_Trial/test_metadata.json",orient="index",indent=4)
     
-
 if __name__ == "__main__":
     main()
