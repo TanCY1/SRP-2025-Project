@@ -40,7 +40,10 @@ def viz3D(data):
     # Plot
     plotter = pv.Plotter()
     plotter.add_volume(grid, cmap="gray",opacity="linear")
+    plotter.show_axes()
+    plotter.show_bounds()
     plotter.show()
+    
     
 import pyvista as pv
 import numpy as np
