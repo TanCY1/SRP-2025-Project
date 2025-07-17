@@ -1,10 +1,35 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
+import re
+import os
 
 metadata = pd.read_csv("Datasets/BreastDCEDL_spy1/BreastDCEDL_spy1_metadata.csv")
 
+def getAcqData():
+    data = dict()
+    pattern = re.compile(r"^(?P<pid>ISPY1_\d+)_.+_vis(?P<vis>\d+)_acq(?P<acq>\d+)")
+    for fname in os.listdir("Datasets/BreastDCEDL_spy1/spt1_dce"):
+        match = pattern.search(fname)
+        if match:
+            groupdict = match.groupdict()
+            pid = groupdict["pid"]
+            vis = groupdict["vis"] 
+            acq = groupdict["acq"]
+            if vis!="1":
+                raise
+            if pid not in data:
+                data[pid]=set()
+            data[pid].add(acq)
+    return data
 
-def generateSplits(metadata:pd.DataFrame,test_size,max_pids=None,seed=42):
+acqData = getAcqData()
+
+def generateSplits(metadata:pd.DataFrame,test_size,number_of_phases,max_pids=None,seed=42):
+    
+    pids = (pid for pid,acqSet in acqData.items() if len(acqSet)==number_of_phases)
+
+    metadata = metadata[metadata["pid"].isin(pids)]
+    
     if max_pids is not None:
         pids:pd.Series = metadata["pid"]
         if max_pids>len(pids):
@@ -24,7 +49,7 @@ def generateSplits(metadata:pd.DataFrame,test_size,max_pids=None,seed=42):
     return train_df,test_df
     
 def main():
-    train_df, test_df = generateSplits(metadata,0.2,max_pids=10)
+    train_df, test_df = generateSplits(metadata,0.2,number_of_phases=3,max_pids=10)
     #print(train_df.columns)
     train_df = train_df[["pid","pCR","ER","PR","HER2"]].set_index("pid",drop=True)
     test_df = test_df[["pid","pCR","ER","PR","HER2"]].set_index("pid",drop=True)
