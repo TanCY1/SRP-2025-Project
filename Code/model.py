@@ -1,0 +1,73 @@
+import lightning as L
+import torch
+import torch.nn.functional as F
+from torch import optim, nn, utils, Tensor
+
+def centreCrop3D(tensor:Tensor,target_shape):
+    b,c,x,y,z = tensor.shape
+    tx,ty,tz = target_shape
+    sx = (x-tx)//2
+    sy = (y-ty)//2
+    sz = (z-tz)//2
+    return tensor[:,:,sx:sx+tx,sy:sy+ty,sz:sz+tz]
+
+class CMCUnit(nn.Module):
+    def __init__(self,in_channels):
+        super().__init__()
+        self.maxPoolingPath = nn.Sequential(
+            nn.Conv3d(in_channels,in_channels,kernel_size=3,padding=1),
+            nn.InstanceNorm3d(in_channels),
+            nn.MaxPool3d(kernel_size=(1,2,2))
+        )
+
+    def forward(self,x):
+        x_pool = self.maxPoolingPath(x)
+        # print(x_pool.shape)
+        x_crop = centreCrop3D(x,x_pool.shape[-3:])
+        # print(x_crop.shape)
+        return torch.cat((x_pool,x_crop),dim=1)
+
+class FeatureExtractionUnit(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.CMCs = nn.Sequential(
+            CMCUnit(1), 
+            CMCUnit(2), 
+            CMCUnit(4), 
+            CMCUnit(8), 
+            CMCUnit(16)
+        )
+    def forward(self,x):
+        return self.CMCs(x)
+
+
+class model(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.FEUs = nn.ModuleList([FeatureExtractionUnit() for _ in range(3)])
+        self.dropout = nn.Dropout()
+        self.fc1 = nn.Linear(24579,512)
+        self.fc2 = nn.Linear(512,2)
+    def forward(self,images,mol):
+        channels = torch.split(images,1,dim=1)
+        x = [feu(ch) for ch,feu in zip(channels, self.FEUs)]
+        x = torch.cat(x,dim=1)
+        assert x.is_contiguous()
+        x = x.view(x.size(0),-1)
+        x = torch.cat([x,mol],dim=1)
+        x = self.dropout(x)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = F.softmax(x,dim=1)
+        return x
+        
+class LitModel(L.LightningModule):
+    def __init__(self):
+        super().__init__()
+
+test = model()
+
+dummy_image =torch.randn((1,3,16,128,128))
+dummy_mol = torch.randn((1,3))
+
+print(test(dummy_image,dummy_mol))
