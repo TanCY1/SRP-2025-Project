@@ -44,17 +44,17 @@ def generateSplits(metadata:pd.DataFrame,test_size,number_of_phases,max_pids=Non
     )
     
     train_df = metadata[metadata["pid"].isin(train_pids)].copy()
-    test_df  = metadata[metadata["pid"].isin(test_pids)].copy()
+    val_df  = metadata[metadata["pid"].isin(test_pids)].copy()
 
-    return train_df,test_df
+    return train_df,val_df
     
 def main():
-    train_df, test_df = generateSplits(metadata,0.2,number_of_phases=3,max_pids=10)
+    train_df, val_df = generateSplits(metadata,0.2,number_of_phases=3,max_pids=10)
     #print(train_df.columns)
     train_df = train_df[["pid","pCR","ER","PR","HER2"]].set_index("pid",drop=True)
-    test_df = test_df[["pid","pCR","ER","PR","HER2"]].set_index("pid",drop=True)
+    val_df = val_df[["pid","pCR","ER","PR","HER2"]].set_index("pid",drop=True)
     train_df.to_json("models/10_Sample_Test_Trial/train_metadata.json",orient="index",indent=4)
-    train_df.to_json("models/10_Sample_Test_Trial/test_metadata.json",orient="index",indent=4)
+    val_df.to_json("models/10_Sample_Test_Trial/validation_metadata.json",orient="index",indent=4)
     
 if __name__ == "__main__":
     main()
