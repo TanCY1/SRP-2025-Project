@@ -25,7 +25,7 @@ def getAcqData():
 acqData = getAcqData()
 
 def generateSplits(metadata:pd.DataFrame,test_size,number_of_phases,max_pids=None,seed=42):
-    
+    metadata.dropna(subset=["pCR","ER","PR","HER2"],inplace=True)
     pids = (pid for pid,acqSet in acqData.items() if len(acqSet)==number_of_phases)
 
     metadata = metadata[metadata["pid"].isin(pids)]
@@ -34,12 +34,22 @@ def generateSplits(metadata:pd.DataFrame,test_size,number_of_phases,max_pids=Non
         pids:pd.Series = metadata["pid"]
         if max_pids>len(pids):
             raise ValueError
-        selectedPids = pids.sample(n=max_pids, random_state=seed)
-        metadata = metadata[metadata["pid"].isin(selectedPids)]
+        target_samples:pd.Series = (metadata["pCR"].value_counts(normalize=True)*max_pids).round().astype(int)
+        
+        # Ensure sum matches exactly
+        diff = max_pids - target_samples.sum()
+        if diff > 0:
+            target_samples[target_samples.idxmax()] += diff
+        elif diff < 0:
+            target_samples[target_samples.idxmin()] -= diff
+            
+        metadata = pd.concat([v.sample(n=target_samples[k],replace=False,random_state=seed) for k,v in metadata.groupby("pCR")])
     stratify_vals = metadata["pCR"].to_numpy()
+    
     train_pids,test_pids = train_test_split(
         metadata["pid"].to_numpy(),
         test_size = test_size,
+        random_state=seed,
         stratify = stratify_vals
     )
     
@@ -49,10 +59,12 @@ def generateSplits(metadata:pd.DataFrame,test_size,number_of_phases,max_pids=Non
     return train_df,val_df
     
 def main():
-    train_df, val_df = generateSplits(metadata,0.2,number_of_phases=3,max_pids=10)
+    train_df, val_df = generateSplits(metadata,0.2,number_of_phases=3,max_pids=10, seed=42)
     #print(train_df.columns)
     train_df = train_df[["pid","pCR","ER","PR","HER2"]].set_index("pid",drop=True)
     val_df = val_df[["pid","pCR","ER","PR","HER2"]].set_index("pid",drop=True)
+    #print(train_df["pCR"].value_counts())
+    #print(val_df["pCR"].value_counts())
     train_df.to_json("models/10_Sample_Test_Trial/train_metadata.json",orient="index",indent=4)
     val_df.to_json("models/10_Sample_Test_Trial/validation_metadata.json",orient="index",indent=4)
     
