@@ -66,21 +66,42 @@ class LitModel(L.LightningModule):
         super().__init__()
         self.model = model()
         self.loss_fn = nn.CrossEntropyLoss()
-
     def training_step(self, batch, batch_idx):
         images, mol, labels = batch
         logits = self.model(images, mol)
         loss = self.loss_fn(logits, labels)
         self.log("train_loss", loss, on_step=True,on_epoch=True, prog_bar=True)
         return loss
+    def configure_optimizers(self):
+        optimizer = optim.Adam(self.model.parameters(), lr=1e-3)
+        return optimizer
+    
     def validation_step(self, batch, batch_idx,):
         images, mol, labels = batch
         logits = self.model(images, mol)
         loss = self.loss_fn(logits, labels)
-        self.log("val_loss", loss, on_step=True,on_epoch=True, prog_bar=True)
+        acc = (logits.argmax(dim=1) == labels).float().mean()
+        self.log("val_loss", loss, prog_bar=True)
+        self.log("val_acc", acc, prog_bar=True)
         return loss
-    def configure_optimizers(self):
-        optimizer = optim.Adam(self.model.parameters(), lr=1e-3)
-        return optimizer
+    def on_test_epoch_start(self):
+        self.preds = list()
+        self.labels = list()
+    
+    def test_step(self, batch, batch_idx):
+        images, mol, labels = batch
+        logits = self.model(images, mol)
+        loss = self.loss_fn(logits, labels)
+        acc = (logits.argmax(dim=1) == labels).float().mean()
+        self.preds.append(logits.argmax(dim=1))
+        self.labels.append(labels)
+        return loss
+    def on_test_epoch_end(self):
+        preds = torch.cat(self.preds, dim=0)
+        labels = torch.cat(self.labels, dim=0)
+        acc = (preds == labels).float().mean()
+        self.log("acc", acc, )
+    
+
 
 

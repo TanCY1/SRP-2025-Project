@@ -26,7 +26,7 @@ acqData = getAcqData()
 
 def generateSplits(metadata:pd.DataFrame,test_size,number_of_phases,max_pids=None,seed=42):
     metadata.dropna(subset=["pCR","ER","PR","HER2"],inplace=True)
-    pids = (pid for pid,acqSet in acqData.items() if len(acqSet)==number_of_phases)
+    pids = pd.Series([pid for pid, acqSet in acqData.items() if len(acqSet) == number_of_phases])
 
     metadata = metadata[metadata["pid"].isin(pids)]
     
@@ -44,6 +44,9 @@ def generateSplits(metadata:pd.DataFrame,test_size,number_of_phases,max_pids=Non
             target_samples[target_samples.idxmin()] -= diff
             
         metadata = pd.concat([v.sample(n=target_samples[k],replace=False,random_state=seed) for k,v in metadata.groupby("pCR")])
+    if test_size == 0:
+        return metadata,pd.DataFrame()
+    
     stratify_vals = metadata["pCR"].to_numpy()
     
     train_pids,test_pids = train_test_split(

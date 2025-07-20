@@ -14,7 +14,7 @@ class ModelDataset(Dataset):
             num_angles = class_samples[label]
             self.allProcessedSamples[pid] = generateProcessedSamples(pid,num_angles)
             self.entries.extend([(pid, i) for i in range(num_angles)])
-        #print(self.entries)
+        print(f"Dataset initialised with {len(self.entries)} entries.")
     def __len__(self):
         return len(self.entries)
 

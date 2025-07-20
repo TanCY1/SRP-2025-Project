@@ -101,7 +101,7 @@ def rotateStackedPhasesInSaggitalPlane(pid:str,stackedPhases,n_samples:int):
         for phase in stackedPhases:
             rotatedPhase = rotate(phase,angle,(1,2),reshape=False)
             stackedPhasesAfterRotation.append(rotatedPhase)
-        print(f"rotated {angle}")
+        #print(f"rotated {angle}")
         stackedPhasesAfterRotation = np.stack(stackedPhasesAfterRotation,axis=0)
         rotatedStackedPhases.append(stackedPhasesAfterRotation)
     rotatedStackedPhases = np.stack(rotatedStackedPhases,axis=0)
