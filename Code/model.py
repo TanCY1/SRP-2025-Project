@@ -2,6 +2,7 @@ import lightning as L
 import torch
 import torch.nn.functional as F
 from torch import optim, nn, utils, Tensor
+from torch.utils.data import DataLoader, Dataset
 
 def centreCrop3D(tensor:Tensor,target_shape):
     b,c,x,y,z = tensor.shape
@@ -54,20 +55,32 @@ class model(nn.Module):
         x = torch.cat(x,dim=1)
         assert x.is_contiguous()
         x = x.view(x.size(0),-1)
-        x = torch.cat([x,mol],dim=1)
+        x = torch.cat([x,mol],dim=1) #shape of (B,24579)
         x = self.dropout(x)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        x = F.softmax(x,dim=1)
         return x
         
 class LitModel(L.LightningModule):
     def __init__(self):
         super().__init__()
+        self.model = model()
+        self.loss_fn = nn.CrossEntropyLoss()
 
-test = model()
+    def training_step(self, batch, batch_idx):
+        images, mol, labels = batch
+        logits = self.model(images, mol)
+        loss = self.loss_fn(logits, labels)
+        self.log("train_loss", loss, on_step=True,on_epoch=True, prog_bar=True)
+        return loss
+    def validation_step(self, batch, batch_idx,):
+        images, mol, labels = batch
+        logits = self.model(images, mol)
+        loss = self.loss_fn(logits, labels)
+        self.log("val_loss", loss, on_step=True,on_epoch=True, prog_bar=True)
+        return loss
+    def configure_optimizers(self):
+        optimizer = optim.Adam(self.model.parameters(), lr=1e-3)
+        return optimizer
 
-dummy_image =torch.randn((1,3,16,128,128))
-dummy_mol = torch.randn((1,3))
 
-print(test(dummy_image,dummy_mol))

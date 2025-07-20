@@ -36,8 +36,7 @@ def stackPhases(pid,acqData):
     acqs = sorted(acqData[pid],key=int)
     volumes = []
     for acq in acqs:
-        img:nib.nifti1.Nifti1Image = nib.load(f"Datasets/BreastDCEDL_spy1/spt1_dce/{pid}_spy1_vis1_acq{acq}.nii.gz")
-        
+        img:nib.nifti1.Nifti1Image = nib.load(f"Datasets/BreastDCEDL_spy1/spt1_dce/{pid}_spy1_vis1_acq{acq}.nii.gz") # type: ignore
         #data has to be transposed from x,z,y, to x,y,z
         data = np.transpose(img.get_fdata(),(0,2,1))
         data = normalise(data)
@@ -46,8 +45,8 @@ def stackPhases(pid,acqData):
     return stacked
 
 def getCentreOfMass(pid):
-    mask = nib.load(f"Datasets/BreastDCEDL_spy1/spy1_mask/{pid}_spy1_vis1_mask.nii.gz")
-    mask = np.transpose(mask.get_fdata(),(0,2,1))
+    mask = nib.load(f"Datasets/BreastDCEDL_spy1/spy1_mask/{pid}_spy1_vis1_mask.nii.gz") # type: ignore
+    mask = np.transpose(mask.get_fdata(),(0,2,1)) # type: ignore
     COM = center_of_mass(mask)
     return COM
 
