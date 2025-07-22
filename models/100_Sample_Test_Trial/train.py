@@ -12,8 +12,12 @@ import torch
 from generateSplits import generateSplits
 import pandas as pd
 
+device = torch.device("cpu")
+
 metadata = pd.read_csv("Datasets/BreastDCEDL_spy1/BreastDCEDL_spy1_metadata.csv")
 model = model()
+
+model.to(device)
 
 train_metadata = pd.read_json("models/100_Sample_Test_Trial/train_metadata.json",orient="index")
 val_metadata = pd.read_json("models/100_Sample_Test_Trial/validation_metadata.json",orient="index")
@@ -26,10 +30,14 @@ val_loader = DataLoader(val_dataset, batch_size=1, num_workers=0)
 
 optimiser = torch.optim.Adam(model.parameters(),lr=1e-3)
 loss_fn = torch.nn.CrossEntropyLoss()
-running_loss = 0
+
 for epoch in range(10):
     model.train()
+    running_loss = 0
     for images, mol, labels in train_loader:
+        images = images.to(device)
+        mol = mol.to(device)
+        labels = labels.to(device)
         optimiser.zero_grad()
         logits = model(images,mol)
         loss = loss_fn(logits,labels)
@@ -42,8 +50,12 @@ y_score = []
 model.eval()
 with torch.no_grad():
     for images, mol, labels in val_loader:
+        images = images.to(device)
+        mol = mol.to(device)
+        labels = labels.to(device)
         y_true.append(labels.item())
         logits:torch.Tensor = model(images,mol)
+        print(logits)
         preds = logits.argmax(dim=1).item()
         y_score.append(preds)
 import matplotlib.pyplot as plt

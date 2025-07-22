@@ -1,4 +1,4 @@
-import lightning as L
+#import lightning as L
 import torch
 import torch.nn.functional as F
 from torch import optim, nn, utils, Tensor
@@ -58,9 +58,9 @@ class model(nn.Module):
         x = torch.cat([x,mol],dim=1) #shape of (B,24579)
         x = self.dropout(x)
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
+        x = self.fc2(x)
         return x
-        
+'''       
 class LitModel(L.LightningModule):
     def __init__(self):
         super().__init__()
@@ -101,7 +101,7 @@ class LitModel(L.LightningModule):
         labels = torch.cat(self.labels, dim=0)
         acc = (preds == labels).float().mean()
         self.log("acc", acc, )
-    
+'''    
 
 
 
