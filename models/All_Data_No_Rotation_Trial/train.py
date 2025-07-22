@@ -45,6 +45,7 @@ for epoch in range(20):
         optimiser.step()
         running_loss += loss.item()
     print(f"Epoch {epoch} Done. Avg Loss: {running_loss / len(train_loader):.4f}")
+torch.save(model.state_dict(),r"models/All_Data_No_Rotation_Trial/model_weights.pth")
 y_true = []
 y_score = []
 model.eval()
@@ -56,7 +57,7 @@ with torch.no_grad():
         y_true.append(labels.item())
         logits:torch.Tensor = model(images,mol)
         print(logits)
-        preds = logits.argmax(dim=1).item()
+        preds = torch.nn.functional.softmax(logits,dim=1)[:,1]
         y_score.append(preds)
 import matplotlib.pyplot as plt
 
