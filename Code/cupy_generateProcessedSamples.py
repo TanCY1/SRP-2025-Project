@@ -2,9 +2,11 @@ import pandas as pd
 import nibabel as nib
 import re
 import os
-import numpy as np
-from scipy.ndimage import affine_transform, center_of_mass, rotate
-from viz import viz3D, viz3D_with_slider
+import cupy as cp
+from cupyx.scipy.ndimage import center_of_mass, rotate
+from viz import viz3D, viz3D_with_slider, vizMid
+import torch
+
 
 metadata = pd.read_csv("Datasets/BreastDCEDL_spy1/BreastDCEDL_spy1_metadata.csv")
 
@@ -18,6 +20,10 @@ def getAcqData():
             pid = groupdict["pid"]
             vis = groupdict["vis"] 
             acq = groupdict["acq"]
+            
+            if not os.path.exists(f"Datasets/BreastDCEDL_spy1/spy1_mask/{pid}_spy1_vis1_mask.nii.gz"):
+                continue
+            
             if vis!="1":
                 raise
             if pid not in data:
@@ -38,34 +44,35 @@ def stackPhases(pid,acqData):
     for acq in acqs:
         img:nib.nifti1.Nifti1Image = nib.load(f"Datasets/BreastDCEDL_spy1/spt1_dce/{pid}_spy1_vis1_acq{acq}.nii.gz") # type: ignore
         #data has to be transposed from x,z,y, to x,y,z
-        data = np.transpose(img.get_fdata(),(0,2,1))
+        data = cp.asarray(img.get_fdata())
+        data = cp.transpose(data,(0,2,1)) 
         data = normalise(data)
         volumes.append(data)
-    stacked = np.stack(volumes,axis=0)
+    stacked = cp.stack(volumes,axis=0)
     return stacked
 
 def getCentreOfMass(pid):
     mask = nib.load(f"Datasets/BreastDCEDL_spy1/spy1_mask/{pid}_spy1_vis1_mask.nii.gz") # type: ignore
-    mask = np.transpose(mask.get_fdata(),(0,2,1)) # type: ignore
+    mask = cp.transpose(cp.asarray(mask.get_fdata()),(0,2,1)) # type: ignore
     COM = center_of_mass(mask)
     return COM
 
-def cropStackedPhases(data, point, target_shape):
+def cropStackedPhases(data, point, target_shape) -> cp.ndarray:
     """
     Crop 4D array (t, x, y, z) around a 3D point in (x, y, z) dims,
     padding with zeros if needed. Does not crop the t dimension.
     
     Parameters:
-    - data: np.ndarray with shape (t, x, y, z)
+    - data: cp.ndarray with shape (t, x, y, z)
     - point: array-like with 3 floats/ints (x, y, z)
     - target_shape: array-like with 3 ints (target_x, target_y, target_z)
     
     Returns:
-    - cropped_data: np.ndarray with shape (t, target_x, target_y, target_z)
+    - cropped_data: cp.ndarray with shape (t, target_x, target_y, target_z)
     """
-    point = np.round(point).astype(int)  # Round to nearest integer
-    shape = np.array(data.shape[1:])  # ignore t dimension
-    target_shape = np.array(target_shape)
+    point = cp.round(point).astype(int)  # Round to nearest integer
+    shape = cp.array(data.shape[1:])  # ignore t dimension
+    target_shape = cp.array(target_shape)
 
     half = target_shape // 2
     extra = target_shape % 2  # 1 if odd, 0 if even
@@ -74,19 +81,20 @@ def cropStackedPhases(data, point, target_shape):
     end = point + half + extra
 
     # Padding if crop goes beyond the array bounds
-    pad_before = np.maximum(-start, 0)
-    pad_after = np.maximum(end - shape, 0)
+    pad_before = cp.maximum(-start, 0)
+    pad_after = cp.maximum(end - shape, 0)
     pad_width = [(0, 0)]  # no padding on t dimension
-    pad_width += list(zip(pad_before, pad_after))
+    pad_width += [(int(b),int(a)) for b,a in zip(pad_before, pad_after)]
     
-    padded = np.pad(data, pad_width, mode="constant", constant_values=0)
+    padded = cp.pad(data, pad_width, mode="constant", constant_values=0)
 
     # Adjust start after padding (shift start by padding)
-    start = np.maximum(start, 0)
-
+    start = cp.maximum(start, 0)
+    
     # Create slices for cropping (t is fully included)
     slices = (slice(None),)  # full slice for t
     slices += tuple(slice(start[i], start[i] + target_shape[i]) for i in range(3))
+    
 
     return padded[slices]
 
@@ -102,9 +110,9 @@ def rotateStackedPhasesInSaggitalPlane(pid:str,stackedPhases,n_samples:int):
             rotatedPhase = rotate(phase,angle,(1,2),reshape=False)
             stackedPhasesAfterRotation.append(rotatedPhase)
         #print(f"rotated {angle}")
-        stackedPhasesAfterRotation = np.stack(stackedPhasesAfterRotation,axis=0)
+        stackedPhasesAfterRotation = cp.stack(stackedPhasesAfterRotation,axis=0)
         rotatedStackedPhases.append(stackedPhasesAfterRotation)
-    rotatedStackedPhases = np.stack(rotatedStackedPhases,axis=0)
+    rotatedStackedPhases = cp.stack(rotatedStackedPhases,axis=0)
     
     #shape is (angles,t,x,y,z)
     return rotatedStackedPhases
@@ -116,15 +124,12 @@ def generateProcessedSamples(pid,n_samples):
     COM = getCentreOfMass(pid)
     croppedStackedPhases = cropStackedPhases(stackedPhases,COM,(16,182,182))
     rotatedStackedPhases = rotateStackedPhasesInSaggitalPlane(pid,croppedStackedPhases,n_samples)
-    croppedRotatedStackedPhases=[]
-    for stackedPhase in rotatedStackedPhases:
-        point = (np.array(stackedPhase.shape)//2)[1:]
-        croppedRotatedStackedPhases.append(cropStackedPhases(stackedPhase,point,(16,128,128)))
-    croppedRotatedStackedPhases = np.stack(croppedRotatedStackedPhases,axis=0)
+    croppedRotatedStackedPhases = cp.stack([
+        cropStackedPhases(stackedPhase,(cp.array(stackedPhase.shape[1:])//2),(16,128,128))
+        for stackedPhase in rotatedStackedPhases
+    ],axis=0)
     return croppedRotatedStackedPhases
 
  
-
-
 
 

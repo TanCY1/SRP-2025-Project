@@ -55,7 +55,8 @@ def viz3D_with_slider(data4d):
     Parameters:
     - data4d: 4D NumPy array of shape (T, X, Y, Z)
     """
-
+    if type(data4d) is not np.ndarray:
+        data4d = data4d.cpu().numpy()  # Convert to NumPy if it's a PyTorch tensor
 
     T = len(data4d)
 
