@@ -1,6 +1,7 @@
 from torch.utils.data import Dataset, DataLoader
 import torch
 import pandas as pd
+from tqdm import tqdm
 
 if torch.cuda.is_available():
     from cupy_generateProcessedSamples import generateProcessedSamples
@@ -14,13 +15,13 @@ class ModelDataset(Dataset):
         self.pids = self.df.index.to_list()
         self.allProcessedSamples = dict()
         self.entries = list()
-        for pid in self.pids:
+        for pid in tqdm(self.pids):
             label = self.df.loc[pid,"pCR"]
             num_angles = class_samples[label]
             if torch.cuda.is_available:
-                self.allProcessedSamples[pid] = torch.from_dlpack(generateProcessedSamples(pid,num_angles)) # pyright: ignore[reportPrivateImportUsage]
+                self.allProcessedSamples[pid] = torch.from_dlpack(generateProcessedSamples(pid,num_angles)).to(torch.float32) # pyright: ignore[reportPrivateImportUsage]
             else:
-                self.allProcessedSamples[pid] = torch.tensor(generateProcessedSamples(pid,num_angles),device=device)
+                self.allProcessedSamples[pid] = torch.tensor(generateProcessedSamples(pid,num_angles),device=device,dtype=torch.float32)
             self.entries.extend([(pid, i) for i in range(num_angles)])
         print(f"Dataset initialised with {len(self.entries)} entries.")
     def __len__(self):

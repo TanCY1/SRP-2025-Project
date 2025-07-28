@@ -11,8 +11,9 @@ from torch.utils.data import DataLoader
 import torch
 from generateSplits import generateSplits
 import pandas as pd
+from trainModel import trainModel
 
-device = torch.device("cpu")
+device = torch.device("cuda")
 
 metadata = pd.read_csv("Datasets/BreastDCEDL_spy1/BreastDCEDL_spy1_metadata.csv")
 model = model()
@@ -25,26 +26,16 @@ val_metadata = pd.read_json("models/100_Sample_Test_Trial/validation_metadata.js
 train_dataset = ModelDataset(train_metadata, class_samples={0.0:1,1.0:1})
 val_dataset = ModelDataset(val_metadata, class_samples={0.0:1,1.0:1})
 
-train_loader = DataLoader(train_dataset, batch_size=2, shuffle=True, num_workers=0)
+train_loader = DataLoader(train_dataset, batch_size=20, shuffle=True, num_workers=0)
 val_loader = DataLoader(val_dataset, batch_size=1, num_workers=0)
 
 optimiser = torch.optim.Adam(model.parameters(),lr=1e-3)
 loss_fn = torch.nn.CrossEntropyLoss()
 
-for epoch in range(10):
-    model.train()
-    running_loss = 0
-    for images, mol, labels in train_loader:
-        images = images.to(device)
-        mol = mol.to(device)
-        labels = labels.to(device)
-        optimiser.zero_grad()
-        logits = model(images,mol)
-        loss = loss_fn(logits,labels)
-        loss.backward()
-        optimiser.step()
-        running_loss += loss.item()
-    print(f"Epoch {epoch} Done. Avg Loss: {running_loss / len(train_loader):.4f}")
+model = trainModel(model,train_loader,optimiser,device,10)
+
+torch.save(model.state_dict(),"models/100_Sample_Test_Trial/model_weights.pth")
+
 y_true = []
 y_score = []
 model.eval()
