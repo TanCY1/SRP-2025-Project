@@ -47,6 +47,9 @@ def viz3D(data):
     
 import pyvista as pv
 import numpy as np
+from torch import Tensor
+import cupy
+
 
 def viz3D_with_slider(data4d):
     """
@@ -55,8 +58,10 @@ def viz3D_with_slider(data4d):
     Parameters:
     - data4d: 4D NumPy array of shape (T, X, Y, Z)
     """
-    if type(data4d) is not np.ndarray:
+    if type(data4d) is Tensor:
         data4d = data4d.cpu().numpy()  # Convert to NumPy if it's a PyTorch tensor
+    elif type(data4d) is cupy.ndarray:
+        data4d = data4d.get()
 
     T = len(data4d)
 

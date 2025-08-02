@@ -29,6 +29,14 @@ def getAcqData():
             if pid not in data:
                 data[pid]=set()
             data[pid].add(acq)
+    for pid,acqs in data.items():
+        match len(acqs):
+            case 3:
+                continue
+            case 4:
+                data[pid] = ["0","1","2"]
+            case 6:
+                data[pid] = ["0","2","5"]
     return data
 
 acqData = getAcqData()

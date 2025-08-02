@@ -21,11 +21,23 @@ def getAcqData():
             pid = groupdict["pid"]
             vis = groupdict["vis"] 
             acq = groupdict["acq"]
+            
+            if not os.path.exists(f"Datasets/BreastDCEDL_spy1/spy1_mask/{pid}_spy1_vis1_mask.nii.gz"):
+                continue
+            
             if vis!="1":
                 raise
             if pid not in data:
                 data[pid]=set()
             data[pid].add(acq)
+    for pid,acqs in data.items():
+        match len(acqs):
+            case 3:
+                continue
+            case 4:
+                data[pid] = ["0","1","2"]
+            case 6:
+                data[pid] = ["0","2","5"]
     return data
 
 acqData = getAcqData()
@@ -94,7 +106,6 @@ def cropStackedPhases(data, point, target_shape):
 
     return padded[slices]
 
-from line_profiler import profile
 
 def rotateStackedPhasesInSaggitalPlane(pid:str,stackedPhases,n_samples:int):
     #COM = getCentreOfMass(pid)

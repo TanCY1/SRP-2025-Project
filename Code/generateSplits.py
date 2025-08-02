@@ -2,6 +2,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import re
 import os
+import torch
 
 metadata = pd.read_csv("Datasets/BreastDCEDL_spy1/BreastDCEDL_spy1_metadata.csv")
 
@@ -24,11 +25,8 @@ def getAcqData():
 
 acqData = getAcqData()
 
-def generateSplits(metadata:pd.DataFrame,test_size,number_of_phases,max_pids=None,seed=42):
+def generateSplits(metadata:pd.DataFrame,test_size,max_pids=None,seed=42):
     metadata.dropna(subset=["pCR","ER","PR","HER2"],inplace=True)
-    pids = pd.Series([pid for pid, acqSet in acqData.items() if len(acqSet) == number_of_phases])
-
-    metadata = metadata[metadata["pid"].isin(pids)]
     
     if max_pids is not None:
         pids:pd.Series = metadata["pid"]
@@ -62,7 +60,7 @@ def generateSplits(metadata:pd.DataFrame,test_size,number_of_phases,max_pids=Non
     return train_df,val_df
     
 def main():
-    train_df, val_df = generateSplits(metadata,0.2,number_of_phases=3,max_pids=10, seed=42)
+    train_df, val_df = generateSplits(metadata,0.2,max_pids=10, seed=42)
     #print(train_df.columns)
     train_df = train_df[["pid","pCR","ER","PR","HER2"]].set_index("pid",drop=True)
     val_df = val_df[["pid","pCR","ER","PR","HER2"]].set_index("pid",drop=True)
