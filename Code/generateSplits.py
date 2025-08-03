@@ -26,8 +26,8 @@ def getAcqData():
 acqData = getAcqData()
 
 def generateSplits(metadata:pd.DataFrame,test_size,max_pids=None,seed=42):
-    metadata.dropna(subset=["pCR","ER","PR","HER2"],inplace=True)
-    
+    metadata = metadata[metadata["pid"].isin(pid for pid in acqData)]
+    metadata = metadata.dropna(subset=["pCR","ER","PR","HER2"])
     if max_pids is not None:
         pids:pd.Series = metadata["pid"]
         if max_pids>len(pids):
@@ -60,14 +60,14 @@ def generateSplits(metadata:pd.DataFrame,test_size,max_pids=None,seed=42):
     return train_df,val_df
     
 def main():
-    train_df, val_df = generateSplits(metadata,0.2,max_pids=10, seed=42)
+    train_df, val_df = generateSplits(metadata,0.2,max_pids=None, seed=42)
     #print(train_df.columns)
     train_df = train_df[["pid","pCR","ER","PR","HER2"]].set_index("pid",drop=True)
     val_df = val_df[["pid","pCR","ER","PR","HER2"]].set_index("pid",drop=True)
     #print(train_df["pCR"].value_counts())
     #print(val_df["pCR"].value_counts())
-    train_df.to_json("models/10_Sample_Test_Trial/train_metadata.json",orient="index",indent=4)
-    val_df.to_json("models/10_Sample_Test_Trial/validation_metadata.json",orient="index",indent=4)
+    train_df.to_json("models/test/train_metadata.json",orient="index",indent=4)
+    val_df.to_json("models/test/validation_metadata.json",orient="index",indent=4)
     
 if __name__ == "__main__":
     main()
