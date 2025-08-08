@@ -42,7 +42,7 @@ class FeatureExtractionUnit(nn.Module):
         return self.CMCs(x)
 
 
-class model(nn.Module):
+class Model(nn.Module):
     def __init__(self):
         super().__init__()
         self.FEUs = nn.ModuleList([FeatureExtractionUnit() for _ in range(3)])
