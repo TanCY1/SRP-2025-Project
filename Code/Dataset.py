@@ -32,7 +32,8 @@ class ModelDataset(Dataset):
                 else:
                     data = torch.tensor(generateProcessedSamples(pid,num_angles),device=device,dtype=torch.float32)
                 #os.makedirs(os.path.dirname(cache_path),exist_ok=True)
-                np.savez_compressed(cache_path,data=data.cpu().numpy())
+                if caching:
+                    np.savez_compressed(cache_path,data=data.cpu().numpy())
             self.allProcessedSamples[pid] = data
             #print(pid) if len(self.allProcessedSamples[pid])>3 else None
             self.entries.extend([(pid, i) for i in range(num_angles)])
