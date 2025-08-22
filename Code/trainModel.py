@@ -4,7 +4,7 @@ from tqdm import trange
 from sklearn.metrics import roc_auc_score
 from copy import deepcopy
 
-device = "cuda" if torch.cuda.is_available else "cpu"
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 def evaluate_roc_auc(model,val_loader):
     model.eval()
