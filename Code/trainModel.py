@@ -23,14 +23,14 @@ def evaluate_roc_auc(model,val_loader):
     return roc_auc_score(y_true,y_score)
 
 
-def trainModel(model:nn.Module, train_loader,optimiser=None,device=torch.device("cpu"),num_epochs=10,val_loader=None,patience=5):
+def trainModel(model:nn.Module, train_loader,optimiser=None,device=torch.device("cpu"),num_epochs=10,val_loader=None,patience=5,scheduler=None):
     model = model.to(device)
     loss_fn = torch.nn.CrossEntropyLoss()
     best_roc_auc = 0
     stale_epochs = 0
     best_model_state_dict = None
     if optimiser is None:
-        optimiser = torch.optim.Adam(model.parameters(),lr=1e-3)
+        optimiser = torch.optim.AdamW(model.parameters(),lr=1e-3)
     
     for epoch in range(num_epochs):
         model.train()
@@ -60,6 +60,15 @@ def trainModel(model:nn.Module, train_loader,optimiser=None,device=torch.device(
                 if stale_epochs>=patience:
                     print(f"Early stopping triggered at epoch {epoch} (best AUC: {best_roc_auc:.4f}).")
                     break
+            if scheduler is not None:
+                old_lrs = [group['lr'] for group in optimiser.param_groups]
+                if isinstance(scheduler,torch.optim.lr_scheduler.ReduceLROnPlateau):
+                    scheduler.step(roc_auc)
+                else:
+                    scheduler.step()
+                new_lrs = [group['lr'] for group in optimiser.param_groups]
+                if old_lrs != new_lrs:
+                    print(f"Learning rate changed from {old_lrs} to {new_lrs}")
     if best_model_state_dict is not None:
         model.load_state_dict(best_model_state_dict)
             
