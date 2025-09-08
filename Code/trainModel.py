@@ -50,6 +50,7 @@ def trainModel(model:nn.Module, train_loader,optimiser=None,device=torch.device(
         
         if val_loader is not None:
             roc_auc = evaluate_roc_auc(model,val_loader)
+            print(f"ROC_AUC: {roc_auc}")
             
             if roc_auc > best_roc_auc:
                 best_roc_auc = roc_auc
