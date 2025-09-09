@@ -7,10 +7,8 @@ import numpy as np
 
 if torch.cuda.is_available():
     from cupy_generateProcessedSamples import generateProcessedSamples
-    device = torch.device("cuda")
 else:
     from numpy_generateProcessedSamples import generateProcessedSamples
-    device = torch.device("cpu")
 class ModelDataset(Dataset):
     def __init__(self, metadata:pd.DataFrame,class_samples:dict={0.0:1,1.0:1},loading_bar=True,caching=False):
         self.df = metadata
@@ -24,13 +22,13 @@ class ModelDataset(Dataset):
             cache_path = os.path.join(cache_dir,f"{pid}_{num_angles}.npz")
             if os.path.exists(cache_path):
                 data_np = np.load(cache_path)["data"]
-                data = torch.tensor(data_np,device=device,dtype=torch.float32)
+                data = torch.tensor(data_np,dtype=torch.float32)
                 
             else:
                 if torch.cuda.is_available:
                     data = torch.from_dlpack(generateProcessedSamples(pid,num_angles)).to(torch.float32) # pyright: ignore[reportPrivateImportUsage]
                 else:
-                    data = torch.tensor(generateProcessedSamples(pid,num_angles),device=device,dtype=torch.float32)
+                    data = torch.tensor(generateProcessedSamples(pid,num_angles),dtype=torch.float32)
                 #os.makedirs(os.path.dirname(cache_path),exist_ok=True)
                 if caching:
                     np.savez_compressed(cache_path,data=data.cpu().numpy())
