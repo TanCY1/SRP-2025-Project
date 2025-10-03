@@ -8,3 +8,8 @@ Datasets/BreastDCEDL_spy1/desktop.ini
 cache
 url.txt
 env/
+.env
+.ipynb_checkpoints/
+.vscode/
+Code/.ipynb_checkpoints/
+Code/test*

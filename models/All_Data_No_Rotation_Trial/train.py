@@ -21,7 +21,6 @@ Model.to(device)
 
 train_metadata = pd.read_json("models/All_Data_No_Rotation_Trial/train_metadata.json",orient="index")
 val_metadata = pd.read_json("models/All_Data_No_Rotation_Trial/validation_metadata.json",orient="index")
-
 train_dataset = ModelDataset(train_metadata, class_samples={0.0:1,1.0:1})
 val_dataset = ModelDataset(val_metadata, class_samples={0.0:1,1.0:1})
 
