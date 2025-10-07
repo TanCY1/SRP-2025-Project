@@ -4,12 +4,12 @@ import re
 import os
 import torch
 
-metadata = pd.read_csv("Datasets/BreastDCEDL_spy1/BreastDCEDL_spy1_metadata.csv")
+metadata = pd.read_csv("../Datasets/BreastDCEDL_spy1/BreastDCEDL_spy1_metadata.csv")
 
 def getAcqData():
     data = dict()
     pattern = re.compile(r"^(?P<pid>ISPY1_\d+)_.+_vis(?P<vis>\d+)_acq(?P<acq>\d+)")
-    for fname in os.listdir("Datasets/BreastDCEDL_spy1/spt1_dce"):
+    for fname in os.listdir("../Datasets/BreastDCEDL_spy1/spt1_dce"):
         match = pattern.search(fname)
         if match:
             groupdict = match.groupdict()
