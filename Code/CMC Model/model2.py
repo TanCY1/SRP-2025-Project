@@ -29,7 +29,7 @@ class CMCUnit(nn.Module):
         return torch.cat((x_pool,x_crop),dim=1)
 
 class SEUnit(nn.Module):
-    def __init__(self, c, r=16):
+    def __init__(self, c, r=4):
         super().__init__()
         self.squeeze = nn.AdaptiveAvgPool3d(1)
         self.excitation = nn.Sequential(
