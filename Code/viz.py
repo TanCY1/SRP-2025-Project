@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('TkAgg')  # Use TkAgg backend for interactive plotting
 import matplotlib.pyplot as plt
 import pyvista as pv
 import numpy as np

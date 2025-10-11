@@ -43,7 +43,7 @@ class ModelDataset(Dataset):
     def __getitem__(self, idx):
         pid, angle_idx = self.entries[idx]
         image = self.allProcessedSamples[pid][angle_idx]
-        mols = torch.tensor(self.df.loc[pid,["ER","PR","HER2"]],dtype=torch.float32)
+        mols = torch.tensor(self.df.loc[pid,["ER","PR","HER2"]].values,dtype=torch.float32)
         label = torch.tensor(self.df.loc[pid,"pCR"],dtype=torch.long)
         return image, mols, label
 

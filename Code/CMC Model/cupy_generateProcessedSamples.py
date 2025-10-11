@@ -4,7 +4,6 @@ import re
 import os
 import cupy as cp
 from cupyx.scipy.ndimage import center_of_mass, rotate
-from viz import viz3D, viz3D_with_slider, vizMid
 import torch
 
 
