@@ -34,7 +34,7 @@ class SEUnit(nn.Module):
         self.squeeze = nn.AdaptiveAvgPool3d(1)
         self.excitation = nn.Sequential(
             nn.Linear(c, c // r, bias=False),
-            nn.ReLU(inplace=True),
+            nn.ReLU(inplace=True), # Safe because it modifies y
             nn.Linear(c // r, c, bias=False),
             nn.Sigmoid()
         )
@@ -50,11 +50,11 @@ class FeatureExtractionUnit(nn.Module):
     def __init__(self):
         super().__init__()
         self.CMCs = nn.Sequential(
-            CMCUnit(1), SEUnit(2),
-            CMCUnit(2), SEUnit(4),
-            CMCUnit(4), SEUnit(8),
-            CMCUnit(8), SEUnit(16),
-            CMCUnit(16), SEUnit(32)
+            CMCUnit(1), 
+            CMCUnit(2), SEUnit(4,4), # 4->2->4
+            CMCUnit(4), SEUnit(8,4), # 8->2->8
+            CMCUnit(8), SEUnit(16,4), # 16->4->16
+            CMCUnit(16), SEUnit(32,4), # 32->8->32
         )
 
     def forward(self, x):
@@ -64,9 +64,9 @@ class FeatureExtractionUnit(nn.Module):
 class Model(nn.Module):
     def __init__(self):
         super().__init__()
-        self.FEUs = nn.ModuleList([FeatureExtractionUnit() for _ in range(3)])
+        self.FEUs = nn.ModuleList([FeatureExtractionUnit() for _ in range(12)])
         self.dropout = nn.Dropout()
-        self.fc1 = nn.Linear(24579,512)
+        self.fc1 = nn.Linear(98306,512)
         self.fc2 = nn.Linear(512,2)
     def forward(self,images,mol):
         channels = torch.split(images,1,dim=1)
@@ -74,52 +74,14 @@ class Model(nn.Module):
         x = torch.cat(x,dim=1)
         assert x.is_contiguous()
         x = x.view(x.size(0),-1)
-        x = torch.cat([x,mol],dim=1) #shape of (B,24579)
+        x = torch.cat([x,mol],dim=1) #shape of (B,98306)
         x = self.dropout(x)
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
-'''       
-class LitModel(L.LightningModule):
-    def __init__(self):
-        super().__init__()
-        self.model = model()
-        self.loss_fn = nn.CrossEntropyLoss()
-    def training_step(self, batch, batch_idx):
-        images, mol, labels = batch
-        logits = self.model(images, mol)
-        loss = self.loss_fn(logits, labels)
-        self.log("train_loss", loss, on_step=True,on_epoch=True, prog_bar=True)
-        return loss
-    def configure_optimizers(self):
-        optimizer = optim.Adam(self.model.parameters(), lr=1e-3)
-        return optimizer
     
-    def validation_step(self, batch, batch_idx,):
-        images, mol, labels = batch
-        logits = self.model(images, mol)
-        loss = self.loss_fn(logits, labels)
-        acc = (logits.argmax(dim=1) == labels).float().mean()
-        self.log("val_loss", loss, prog_bar=True)
-        self.log("val_acc", acc, prog_bar=True)
-        return loss
-    def on_test_epoch_start(self):
-        self.preds = list()
-        self.labels = list()
     
-    def test_step(self, batch, batch_idx):
-        images, mol, labels = batch
-        logits = self.model(images, mol)
-        loss = self.loss_fn(logits, labels)
-        acc = (logits.argmax(dim=1) == labels).float().mean()
-        self.preds.append(logits.argmax(dim=1))
-        self.labels.append(labels)
-        return loss
-    def on_test_epoch_end(self):
-        preds = torch.cat(self.preds, dim=0)
-        labels = torch.cat(self.labels, dim=0)
-        acc = (preds == labels).float().mean()
-        self.log("acc", acc, )
-'''    
+
+
 
 

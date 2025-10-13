@@ -2,7 +2,6 @@
 import torch
 import torch.nn.functional as F
 from torch import optim, nn, utils, Tensor
-from torch.utils.data import DataLoader, Dataset
 
 def centreCrop3D(tensor:Tensor,target_shape):
     b,c,x,y,z = tensor.shape
@@ -45,9 +44,9 @@ class FeatureExtractionUnit(nn.Module):
 class Model(nn.Module):
     def __init__(self):
         super().__init__()
-        self.FEUs = nn.ModuleList([FeatureExtractionUnit() for _ in range(3)])
+        self.FEUs = nn.ModuleList([FeatureExtractionUnit() for _ in range(12)])
         self.dropout = nn.Dropout()
-        self.fc1 = nn.Linear(24579,512)
+        self.fc1 = nn.Linear(98306,512)
         self.fc2 = nn.Linear(512,2)
     def forward(self,images,mol):
         channels = torch.split(images,1,dim=1)
@@ -55,11 +54,14 @@ class Model(nn.Module):
         x = torch.cat(x,dim=1)
         assert x.is_contiguous()
         x = x.view(x.size(0),-1)
-        x = torch.cat([x,mol],dim=1) #shape of (B,24579)
+        x = torch.cat([x,mol],dim=1) #shape of (B,98306)
         x = self.dropout(x)
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
+
+    
+
 '''       
 class LitModel(L.LightningModule):
     def __init__(self):
@@ -102,6 +104,5 @@ class LitModel(L.LightningModule):
         acc = (preds == labels).float().mean()
         self.log("acc", acc, )
 '''    
-
 
 

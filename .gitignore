@@ -1,4 +1,4 @@
-Code/__pycache__
+__pycache__
 Code/env
 Datasets/BreastDCEDL_spy1.zip
 Datasets/BreastDCEDL_spy1/spt1_dce
@@ -13,3 +13,5 @@ env/
 .vscode/
 Code/.ipynb_checkpoints/
 Code/test*
+test*
+*.npz

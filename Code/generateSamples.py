@@ -79,5 +79,5 @@ def generateSamples(pid,num_samples,dataset_path):
     T3s = augment(T3,num_samples)
     T0s = [[cropCentre(phase,(16,128,128)) for phase in augmented_sample] for augmented_sample in T0s]
     T3s = [[cropCentre(phase,(16,128,128)) for phase in augmented_sample] for augmented_sample in T3s]
-    return T0s,T3s
-    
+    samples = [(T0,T3) for T0,T3 in zip(T0s,T3s)]
+    return samples
