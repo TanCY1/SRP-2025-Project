@@ -13,3 +13,6 @@ env/
 .vscode/
 Code/.ipynb_checkpoints/
 Code/test*
+test*
+*.npz
+*.pyc
