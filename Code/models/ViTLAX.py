@@ -211,10 +211,11 @@ class Encoder(nn.Module):
 class VisionTransformer(nn.Module):
   """VisionTransformer."""
 
-  num_classes: int
+  num_classes: int = 10 #to change
   patches: Any
+  patches_size: Tuple[int, int, int] = (2, 2, 2)  
   transformer: Any
-  hidden_size: int
+  hidden_size: int = 64 #to change
   resnet: Optional[Any] = None
   representation_size: Optional[int] = None
   classifier: str = 'token'
@@ -266,8 +267,8 @@ class VisionTransformer(nn.Module):
     
     x = nn.Conv(
         features=self.hidden_size,
-        kernel_size=self.patches.size,
-        strides=self.patches.size,
+        kernel_size=self.patches_size,
+        strides=self.patches_size,
         padding='VALID',
         name='embedding')(
             x)
