@@ -3,6 +3,7 @@ import torch
 import torch.nn.functional as F
 from torch import optim, nn, utils, Tensor
 from torch.utils.data import DataLoader, Dataset
+from typing import Literal
 
 def centreCrop3D(tensor:Tensor,target_shape):
     b,c,x,y,z = tensor.shape
@@ -69,18 +70,24 @@ class Model(nn.Module):
         self.avgpool=nn.AdaptiveAvgPool3d((1,1,1))
         self.fc1 = nn.Linear(386,256)
         self.fc2 = nn.Linear(256,2)
-    def forward(self,images,mol):
+    def forward(self,images,mol,mode:Literal["preNac","both"]="both"):
+        if mode=="preNac":
+            images = images[:,:images.shape[1]//2,...]
         channels = torch.split(images,1,dim=1)
         x = [feu(ch) for ch,feu in zip(channels, self.FEUs)]
         x = torch.cat(x,dim=1)
-        assert x.is_contiguous()
-        x = self.avgpool(x) #shape of (B,384)
+        x = self.avgpool(x) #shape of (B,384) or (B,192) if mode=preNac
         x = torch.flatten(x,1)
+        if mode=="preNac":
+            zeros = torch.zeros_like(x)
+            x=torch.cat([x,zeros],dim=1)
         x = torch.cat([x,mol],dim=1) #shape of (B,386)
         x = self.dropout(x)
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
+    
+
 
 
 

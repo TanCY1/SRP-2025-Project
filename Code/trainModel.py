@@ -15,9 +15,11 @@ def trainModel(model:nn.Module,
                optimiser:Optional[torch.optim.Optimizer]=None,
                num_epochs:int=20,
                val_loader:Optional[DataLoader]=None,
-               score_fn:Optional[Callable[[nn.Module,DataLoader,bool,Literal[1,2]],float]]=None,
+               score_fn:Optional[Callable[[nn.Module,DataLoader,bool,Literal[1,2],dict],float]]=None,
                score_name:str="Score",
-               patience:Optional[int]=None) -> tuple[nn.Module, float]:
+               patience:Optional[int]=None,
+               trainKwargs:dict={},
+               testKwargs:dict={}) -> tuple[nn.Module, float]:
     
     if optimiser is None:
         raise ValueError("Optimiser must be provided")
@@ -45,10 +47,10 @@ def trainModel(model:nn.Module,
             optimiser.zero_grad()
             if combine_timepoints:
                 volumes = torch.cat((T0_volumes,T3_volumes),dim=1)
-                logits = model(volumes,mols)
+                logits = model(volumes,mols,**trainKwargs)
             else:
                 labels = labels.to(dtype=torch.float32)
-                logits = model(T0_volumes,T3_volumes,mols)
+                logits = model(T0_volumes,T3_volumes,mols,**trainKwargs)
             
             if out_features==1:
                 logits = logits.squeeze(1)
@@ -61,7 +63,7 @@ def trainModel(model:nn.Module,
         if val_loader is not None:
             assert score_fn is not None
             assert patience is not None
-            score = score_fn(model,val_loader,combine_timepoints,out_features)
+            score = score_fn(model,val_loader,combine_timepoints,out_features,testKwargs)
             print(f"{score_name}={score}")
             if score > bestScore:
                 bestScore = score

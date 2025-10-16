@@ -2,6 +2,7 @@
 import torch
 import torch.nn.functional as F
 from torch import optim, nn, utils, Tensor
+from typing import Literal
 
 def centreCrop3D(tensor:Tensor,target_shape):
     b,c,x,y,z = tensor.shape
@@ -48,12 +49,17 @@ class Model(nn.Module):
         self.dropout = nn.Dropout()
         self.fc1 = nn.Linear(98306,512)
         self.fc2 = nn.Linear(512,2)
-    def forward(self,images,mol):
+    def forward(self,images,mol,mode:Literal["preNac","both"]="both"):
+        if mode=="preNac":
+            images = images[:,:images.shape[1]//2,...]
         channels = torch.split(images,1,dim=1)
         x = [feu(ch) for ch,feu in zip(channels, self.FEUs)]
         x = torch.cat(x,dim=1)
         assert x.is_contiguous()
         x = x.view(x.size(0),-1)
+        if mode=="preNac":
+            zeros = torch.zeros_like(x)
+            x=torch.cat([x,zeros],dim=1)
         x = torch.cat([x,mol],dim=1) #shape of (B,98306)
         x = self.dropout(x)
         x = F.relu(self.fc1(x))

@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
+from typing import Literal
 
 class ResBlock(nn.Module):
     def __init__(self, in_channels, out_channels,stride):
@@ -95,9 +96,12 @@ class Model(nn.Module):
         self.fc1 = nn.Linear(128+128+32,64)
         self.bn = nn.BatchNorm1d(64)
         self.fc2 = nn.Linear(64,1)
-    def forward(self,preNacVol,postNacVol,mols):
+    def forward(self,preNacVol,postNacVol,mols,mode:Literal["preNac","both"]):
         x1 = self.preNac(preNacVol)
-        x2 = self.postNac(postNacVol)
+        if mode=="preNac":
+            x2 = torch.zeros_like(x1)
+        elif mode=="both":
+            x2 = self.postNac(postNacVol)
         x3 = self.mols_encoder(mols)
         x = torch.cat([x1,x2,x3],dim=1)
         x = F.relu(self.fc1(x))
