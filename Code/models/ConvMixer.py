@@ -28,7 +28,7 @@ class ConvMixerBlock(nn.Module):
         
 
 class ConvMixer(nn.Module):
-    def __init__(self,dim=128,depth=4,kernel_size=(1,9,9),patch_size=(8,8,8)):
+    def __init__(self,dim,depth,kernel_size,patch_size):
         super().__init__()
         self.conv = nn.Conv3d(6,dim,kernel_size=patch_size,stride=patch_size) #each patch is (128,1,1,1)
         self.bn = nn.BatchNorm3d(dim)
@@ -44,18 +44,18 @@ class ConvMixer(nn.Module):
         return x
 
 class Model(nn.Module):
-    def __init__(self):
+    def __init__(self,dim=128,depth=4,kernel_size=(1,9,9),patch_size=(8,8,8),mol_dim=32,hidden_fusion_dim=64):
         super().__init__()
-        self.preNac = ConvMixer()
-        self.postNac = ConvMixer()
+        self.preNac = ConvMixer(dim,depth,kernel_size,patch_size)
+        self.postNac = ConvMixer(dim,depth,kernel_size,patch_size)
         self.mols_encoder = nn.Sequential(
-            nn.Linear(2,32),
+            nn.Linear(2,mol_dim),
             nn.ReLU(),
-            nn.BatchNorm1d(32)
+            nn.BatchNorm1d(mol_dim)
         )
-        self.fc1 = nn.Linear(128+128+32,64)
-        self.bn = nn.BatchNorm1d(64)
-        self.fc2 = nn.Linear(64,1)
+        self.fc1 = nn.Linear(dim+dim+mol_dim,hidden_fusion_dim)
+        self.bn = nn.BatchNorm1d(hidden_fusion_dim)
+        self.fc2 = nn.Linear(hidden_fusion_dim,1)
     def forward(self,preNacVol,postNacVol,mols,mode:Literal["preNac","both"]):
         x1 = self.preNac(preNacVol)
         if mode=="preNac":
@@ -68,5 +68,6 @@ class Model(nn.Module):
         x = self.bn(x)
         x = self.fc2(x)
         return x
-    
+
+
         
