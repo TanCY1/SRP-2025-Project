@@ -1,6 +1,7 @@
 from torch import nn
 import torch.nn.functional as F
 import torch
+from typing import Literal
 
 class Residual(nn.Module):
     def __init__(self,dim,kernel_size):
@@ -41,7 +42,31 @@ class ConvMixer(nn.Module):
         x = self.avgpool(x)
         x = torch.flatten(x,1)
         return x
-    
 
-print(sum(p.numel() for p in ConvMixer().parameters()))
+class Model(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.preNac = ConvMixer()
+        self.postNac = ConvMixer()
+        self.mols_encoder = nn.Sequential(
+            nn.Linear(2,32),
+            nn.ReLU(),
+            nn.BatchNorm1d(32)
+        )
+        self.fc1 = nn.Linear(128+128+32,64)
+        self.bn = nn.BatchNorm1d(64)
+        self.fc2 = nn.Linear(64,1)
+    def forward(self,preNacVol,postNacVol,mols,mode:Literal["preNac","both"]):
+        x1 = self.preNac(preNacVol)
+        if mode=="preNac":
+            x2 = torch.zeros_like(x1)
+        elif mode=="both":
+            x2 = self.postNac(postNacVol)
+        x3 = self.mols_encoder(mols)
+        x = torch.cat([x1,x2,x3],dim=1)
+        x = F.relu(self.fc1(x))
+        x = self.bn(x)
+        x = self.fc2(x)
+        return x
+    
         
