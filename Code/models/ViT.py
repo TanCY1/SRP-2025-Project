@@ -1,7 +1,8 @@
 from torch import nn
 import torch.nn.functional as F
-import torch
-import math
+import torch, math
+from typing import Literal
+from models.crossAttentionFusion import crossAttentionFusion
 
 
 class PatchedEmbed(nn.Module):
@@ -112,10 +113,37 @@ class VolumeEncoder(nn.Module):
             patches = x[:,1:,:]
             return patches.mean(dim=1)
 
+class Model(nn.Module):
+    def __init__(self,image_size,hidden_dim,patch_size,num_heads,feedforward_dim,num_blocks,mol_dim,hidden_fusion_dim):
+        super().__init__()
+        self.preNac = VolumeEncoder(image_size,hidden_dim,patch_size,num_heads,feedforward_dim,num_blocks,use_cls=True)
+        self.postNac = VolumeEncoder(image_size,hidden_dim,patch_size,num_heads,feedforward_dim,num_blocks,use_cls=True)
+        self.mols_encoder = nn.Sequential(
+            nn.Linear(2,mol_dim),
+            nn.GELU(),
+            nn.LayerNorm(mol_dim)
+        )
+
+        self.fc1 = nn.Linear(hidden_dim+hidden_dim+mol_dim,hidden_fusion_dim)
+        self.ln = nn.LayerNorm(hidden_fusion_dim)
+        self.fc2 = nn.Linear(hidden_fusion_dim,1)
+        
+    def forward(self,preNacVol,postNacVol,mols,mode:Literal["preNac","both"]):
+        preNacEmbed = self.preNac(preNacVol)
+
+        if mode=="preNac":
+            postNacEmbed = torch.zeros_like(preNacEmbed)
+        elif mode=="both":
+            postNacEmbed = self.postNac(postNacVol)
+        
+        molEmbed = self.mols_encoder(mols)
+        
+        x = torch.cat([preNacEmbed,postNacEmbed,molEmbed],dim=1)
+        x = F.gelu(self.fc1(x))
+        x = self.ln(x)
+        x = self.fc2(x)
+        return x
+        
+        
+        
     
-model = VolumeEncoder((16,128,128),128,(8,8,8),8,256,4,False)
-
-print(sum(p.numel() for p in model.parameters()))
-
-dummy = torch.randn((1,6,16,128,128))
-print(model(dummy).shape)
