@@ -126,6 +126,7 @@ class GNNpCRModel(nn.Module):
         patch_features = torch.cat(patch_features, dim=1)  # (B, C, X, Y, Z)
 
         B, C, X, Y, Z = patch_features.shape
+        edge_index = generate_3d_edge_index((X, Y, Z)) 
 
         # Flatten spatial dimensions -> nodes
         x_nodes = patch_features.view(B, C, -1).permute(0, 2, 1)  # (B, num_nodes, feature_dim)
@@ -149,13 +150,6 @@ class GNNpCRModel(nn.Module):
 # -----------------------------------------------------
 # Example usage
 # -----------------------------------------------------
-if __name__ == "__main__":
-    B, C, X, Y, Z = 2, 12, 8, 8, 8  # example shape
-    images = torch.randn(B, C, X, Y, Z)
-    mol = torch.randn(B, 512)  # example molecular features
-    edge_index = generate_3d_edge_index((X, Y, Z))
+# example molecular features
 
-    model = GNNpCRModel()
-    logits = model(images, mol, edge_index, mode="preNac")
-    print("Output shape:", logits.shape)
         
