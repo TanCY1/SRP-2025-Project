@@ -101,7 +101,7 @@ class PatchGNN(nn.Module):
 # Main Model: CNN + GNN fusion
 # -----------------------------------------------------
 class GNNpCRModel(nn.Module):
-    def __init__(self, patch_feature_dim=64, gnn_hidden=128, gnn_out=64):
+    def __init__(self, patch_feature_dim=384, gnn_hidden=128, gnn_out=64):
         super().__init__()
         # CNN feature extractors for each input channel
         self.FEUs = nn.ModuleList([FeatureExtractionUnit() for _ in range(12)])
