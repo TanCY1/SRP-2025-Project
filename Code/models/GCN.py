@@ -113,7 +113,7 @@ class GNNpCRModel(nn.Module):
                             out_dim=gnn_out)
 
         # Final classifier: combines GNN + molecular data
-        self.fc1 = nn.Linear(gnn_out + 512, 256)
+        self.fc1 = nn.Linear(gnn_out + 512, 256) #clarify mol_dim
         self.fc2 = nn.Linear(256, 2)
 
     def forward(self, images, mol, edge_index, mode="both"):
