@@ -45,8 +45,8 @@ def generate_3d_edge_index(shape):
                         dst = node_idx(nx, ny, nz)
                         edges.append((src, dst))
 
-    edge_index = torch.tensor(edges, dtype=torch.long).t().contiguous()
-    return edge_index
+    edge_index = torch.tensor(edges, dtype=torch.long,device="cuda" if torch.cuda.is_available else "cpu").t().contiguous()
+    return edge_index 
 
 
 # -----------------------------------------------------
@@ -113,10 +113,10 @@ class GNNpCRModel(nn.Module):
                             out_dim=gnn_out)
 
         # Final classifier: combines GNN + molecular data
-        self.fc1 = nn.Linear(gnn_out + 512, 256) #clarify mol_dim
+        self.fc1 = nn.Linear(gnn_out + 2, 256) #clarify mol_dim
         self.fc2 = nn.Linear(256, 2)
 
-    def forward(self, images, mol, edge_index, mode="both"):
+    def forward(self, images, mol,  mode):
         if mode == "preNac":
             images = images[:, :images.shape[1] // 2, ...]
 
@@ -124,7 +124,9 @@ class GNNpCRModel(nn.Module):
         channels = torch.split(images, 1, dim=1)
         patch_features = [feu(ch) for ch, feu in zip(channels, self.FEUs)]
         patch_features = torch.cat(patch_features, dim=1)  # (B, C, X, Y, Z)
-
+        if mode=="preNac":
+            zeros = torch.zeros_like(patch_features)
+            patch_features=torch.cat([patch_features,zeros],dim=1)
         B, C, X, Y, Z = patch_features.shape
         edge_index = generate_3d_edge_index((X, Y, Z)) 
 

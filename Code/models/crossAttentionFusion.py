@@ -13,10 +13,10 @@ class FeedForward(nn.Module):
         return x
 
 class crossAttentionFusion(nn.Module):
-    def __init__(self,hidden_dim,feedforward_dim,dropout):
+    def __init__(self,hidden_dim,feedforward_dim,useDropout):
         super().__init__()
         self.hidden_dim = hidden_dim
-        self.dropout = dropout
+        self.useDropout = useDropout
         self.ln1 = nn.LayerNorm(hidden_dim)
         self.ln2 = nn.LayerNorm(hidden_dim)
         self.q_proj = nn.Linear(hidden_dim,hidden_dim)
@@ -41,7 +41,7 @@ class crossAttentionFusion(nn.Module):
         
         attentionOutput = attentionWeights*value
         
-        if self.dropout:
+        if self.useDropout:
             attentionOutput = self.dropout(attentionOutput)
         
         x = attentionOutput + preNacEmbed

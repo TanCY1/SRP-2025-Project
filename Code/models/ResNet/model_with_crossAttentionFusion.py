@@ -85,11 +85,11 @@ class ResNet(nn.Module):
         return x
 
 class Model(nn.Module):
-    def __init__(self,hidden_dim,feedforward_dim,dropout):
+    def __init__(self,hidden_dim,feedforward_dim,fusion_dropout):
         super().__init__()
         self.preNac = ResNet(6)
         self.postNac = ResNet(6)
-        self.fusion = crossAttentionFusion(hidden_dim,feedforward_dim,dropout)
+        self.fusion = crossAttentionFusion(hidden_dim,feedforward_dim,fusion_dropout)
         self.mols_encoder = nn.Sequential(
             nn.Linear(2,32),
             nn.ReLU(),
