@@ -2,6 +2,8 @@ from torch import nn
 import torch.nn.functional as F
 import torch
 from typing import Literal
+from torch import Tensor
+from torch_geometric.nn import GCNConv
 
 class Residual(nn.Module):
     def __init__(self,dim,kernel_size):
@@ -39,8 +41,6 @@ class ConvMixer(nn.Module):
         x = F.gelu(self.conv(x))
         x = self.bn(x)
         x = self.blocks(x)
-        x = self.avgpool(x)
-        x = torch.flatten(x,1)
         return x
 
 def generate_3d_edge_index(shape):
@@ -68,7 +68,8 @@ def generate_3d_edge_index(shape):
                         dst = node_idx(nx, ny, nz)
                         edges.append((src, dst))
 
-    edge_index = torch.tensor(edges, dtype=torch.long,device="cuda" if torch.cuda.is_available else "cpu").t().contiguous()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    edge_index = torch.tensor(edges, dtype=torch.long, device=device).t().contiguous()
     return edge_index 
 
 class PatchGNN(nn.Module):
@@ -95,7 +96,7 @@ class Model(nn.Module):
         self.gnn = PatchGNN(in_dim=patch_feature_dim,
                             hidden_dim=gnn_hidden,
                             out_dim=gnn_out)
-        self.fc1 = nn.Linear(dim+dim+mol_dim,hidden_fusion_dim)
+        self.fc1 = nn.Linear(2 * gnn_out + mol_dim, hidden_fusion_dim)
         self.bn = nn.BatchNorm1d(hidden_fusion_dim)
         self.fc2 = nn.Linear(hidden_fusion_dim,1)
     def forward(self,preNacVol,postNacVol,mols,mode:Literal["preNac","both"]):
@@ -106,11 +107,12 @@ class Model(nn.Module):
             x2 = self.postNac(postNacVol)
           
         B, C, X, Y, Z = x1.shape
-        edge_index = generate_3d_edge_index((X, Y, Z)) 
+        device = preNacVol.device
+        edge_index = generate_3d_edge_index((X, Y, Z)).to(device)
 
         # Flatten spatial dimensions -> nodes
-        x1_nodes = x1.view(B, C, -1).permute(0, 2, 1)  # (B, num_nodes, feature_dim)
-        x2_nodes = x2.view(B, C, -1).permute(0, 2, 1)  # (B, num_nodes, feature_dim)
+        x1_nodes = x1.view(B, C, -1).permute(0, 2, 1).to(device) # (B, num_nodes, feature_dim)
+        x2_nodes = x2.view(B, C, -1).permute(0, 2, 1).to(device) # (B, num_nodes, feature_dim)
 
         gnn1_outputs = []
         for b in range(B):
@@ -118,6 +120,7 @@ class Model(nn.Module):
             gnn1_out = x1_out.mean(dim=0)  # global average pooling
             gnn1_outputs.append(gnn1_out)
 
+        gnn2_outputs = []
         for b in range(B):
             x2_out = self.gnn(x2_nodes[b], edge_index)
             gnn2_out = x2_out.mean(dim=0)  # global average pooling
@@ -125,7 +128,7 @@ class Model(nn.Module):
 
         x1_gnn = torch.stack(gnn1_outputs, dim=0)  # (B, gnn_out_dim)
         x2_gnn = torch.stack(gnn2_outputs, dim=0)  # (B, gnn_out_dim)
-        x3 = self.mols_encoder(mols)
+        x3 = self.mols_encoder(mols.to(device))
         x = torch.cat([x1_gnn,x2_gnn,x3],dim=1)
         x = F.relu(self.fc1(x))
         x = self.bn(x)
