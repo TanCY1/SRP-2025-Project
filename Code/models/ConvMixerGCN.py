@@ -84,7 +84,7 @@ class PatchGNN(nn.Module):
         return x
 
 class Model(nn.Module):
-    def __init__(self,dim=128,depth=4,kernel_size=(1,9,9),patch_size=(8,8,8),mol_dim=32,hidden_fusion_dim=64, patch_feature_dim=128, gnn_hidden=64, gnn_out=64):
+    def __init__(self,dim=128,depth=4,kernel_size=(1,9,9),patch_size=(8,8,8),mol_dim=32,hidden_fusion_dim=64, gnn_hidden=64, gnn_out=64):
         super().__init__()
         self.preNac = ConvMixer(dim,depth,kernel_size,patch_size)
         self.postNac = ConvMixer(dim,depth,kernel_size,patch_size)
@@ -93,7 +93,7 @@ class Model(nn.Module):
             nn.ReLU(),
             nn.BatchNorm1d(mol_dim)
         )
-        self.gnn = PatchGNN(in_dim=patch_feature_dim,
+        self.gnn = PatchGNN(in_dim=dim,
                             hidden_dim=gnn_hidden,
                             out_dim=gnn_out)
         self.fc1 = nn.Linear(2 * gnn_out + mol_dim, hidden_fusion_dim)
