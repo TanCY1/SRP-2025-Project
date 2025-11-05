@@ -5,7 +5,7 @@ from typing import Literal
 from torch import Tensor
 from torch_geometric.nn import GCNConv, global_mean_pool
 import torch_geometric.data
-
+from functools import cache
 
 class Residual(nn.Module):
     def __init__(self,dim,kernel_size):
@@ -44,6 +44,7 @@ class ConvMixerWithoutPooling(nn.Module):
         x = self.blocks(x)
         return x
 
+@cache
 def generateEdges(X,Y,Z):
     """
     Generate a 6-connected 3D adjacency edge_index for GNN.
