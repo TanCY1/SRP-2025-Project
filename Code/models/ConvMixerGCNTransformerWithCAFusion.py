@@ -8,7 +8,7 @@ import torch_geometric.data
 import torch_geometric.utils
 import math
 from functools import cache
-from crossAttentionFusion import crossAttentionFusion
+from models.crossAttentionFusion import crossAttentionFusion
 
 class Residual(nn.Module):
     def __init__(self,dim,kernel_size):

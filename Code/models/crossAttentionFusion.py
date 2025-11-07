@@ -13,18 +13,18 @@ class FeedForward(nn.Module):
         return x
 
 class crossAttentionFusion(nn.Module):
-    def __init__(self,hidden_dim,feedforward_dim,useDropout):
+    def __init__(self,in_features,feedforward_dim,useDropout):
         super().__init__()
-        self.hidden_dim = hidden_dim
+        self.hidden_dim = in_features
         self.useDropout = useDropout
-        self.ln1 = nn.LayerNorm(hidden_dim)
-        self.ln2 = nn.LayerNorm(hidden_dim)
-        self.q_proj = nn.Linear(hidden_dim,hidden_dim)
-        self.kv_proj = nn.Linear(hidden_dim,2*hidden_dim)
-        self.ln3 = nn.LayerNorm(hidden_dim)
-        self.ff = FeedForward(hidden_dim,feedforward_dim)
+        self.ln1 = nn.LayerNorm(in_features)
+        self.ln2 = nn.LayerNorm(in_features)
+        self.q_proj = nn.Linear(in_features,in_features)
+        self.kv_proj = nn.Linear(in_features,2*in_features)
+        self.ln3 = nn.LayerNorm(in_features)
+        self.ff = FeedForward(in_features,feedforward_dim)
         self.dropout = nn.Dropout(0.3)
-        self.ln4 = nn.LayerNorm(hidden_dim)
+        self.ln4 = nn.LayerNorm(in_features)
         
     def forward(self,preNacEmbed,postNacEmbed):
         
