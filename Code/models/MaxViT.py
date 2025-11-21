@@ -156,9 +156,42 @@ if __name__ == "__main__":
     maxvit_block = MaxViT_Block(
         dim = 256,                        # dimension of first layer, doubles every layer
         dim_head = 32,                    # dimension of attention heads, kept at 32 in paper
-        window_size = (8,8,6),            # window size for block and grids
+        window_size = (8,8,6),            # window size for block and grids ## <- MAY NEED TO CHANGE
         dropout = 0.0                     # dropout
     )
     img = torch.randn(2, 256, 32, 32, 24)
     preds = maxvit_block(img) 
     print(preds.shape)
+
+class MaxViTModel(nn.Module):
+    def __init__(self, in_channels=6, dim=256, num_blocks=4): ## Adjust number of blocks if needed
+        super().__init__()
+
+        # 1. Patch embedding (this is where tip #1 goes)
+        self.patch_embed = nn.Conv3d(
+            in_channels=in_channels,   # e.g. 4 MRI sequences ## NEED TO CHANGE
+            out_channels=dim,          # must match MaxViT dim
+            kernel_size=4,
+            stride=4
+        )
+
+        # 2. One or more MaxViT blocks
+         self.blocks = nn.ModuleList([
+            MaxViT_Block(dim=dim, window_size=(8,8,6)) ## NEED TO CHANGE
+            for _ in range(num_blocks)
+        ])
+
+        # 3. Global average pooling + classifier
+        self.classifier = nn.Sequential(
+            nn.AdaptiveAvgPool3d(1),
+            nn.Flatten(),
+            nn.Linear(dim, 1)
+        )
+
+    def forward(self, x):
+        x = self.patch_embed(x)   # 🎯 apply patch embedding
+        for block in self.blocks:  # apply each MaxViT block sequentially
+            x = block(x)
+        out = self.classifier(x)  # logits
+        return out
+
