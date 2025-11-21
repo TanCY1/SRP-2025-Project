@@ -156,7 +156,7 @@ if __name__ == "__main__":
     maxvit_block = MaxViT_Block(
         dim = 256,                        # dimension of first layer, doubles every layer
         dim_head = 32,                    # dimension of attention heads, kept at 32 in paper
-        window_size = (8,8,6),            # window size for block and grids ## <- MAY NEED TO CHANGE
+        window_size = (8,8,4),            # window size for block and grids ## <- MAY NEED TO CHANGE
         dropout = 0.0                     # dropout
     )
     img = torch.randn(2, 256, 32, 32, 24)
@@ -177,7 +177,7 @@ class MaxViTModel(nn.Module):
 
         # 2. One or more MaxViT blocks
          self.blocks = nn.ModuleList([
-            MaxViT_Block(dim=dim, window_size=(8,8,6)) ## NEED TO CHANGE
+            MaxViT_Block(dim=dim, window_size=(8,8,4)) ## NEED TO CHANGE
             for _ in range(num_blocks)
         ])
 
@@ -189,7 +189,7 @@ class MaxViTModel(nn.Module):
         )
 
     def forward(self, x):
-        x = self.patch_embed(x)   # 🎯 apply patch embedding
+        x = self.patch_embed(x)   #input is (B, in_channels, H, W D)
         for block in self.blocks:  # apply each MaxViT block sequentially
             x = block(x)
         out = self.classifier(x)  # logits
