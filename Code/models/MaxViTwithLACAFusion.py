@@ -7,7 +7,7 @@ from torchvision.ops.misc import Conv3dNormActivation
 from functools import partial
 from typing import Literal, Callable
 import numpy as np
-from models.crossAttentionFusion import crossAttentionFusion
+from models.latentAlignmentCrossAttentionFusion import latentAlignmentCrossAttentionFusion
 
 
 
@@ -514,6 +514,7 @@ class MaxVit(nn.Module):
             p_idx += num_layers
             
         self.pool = nn.AdaptiveAvgPool3d(1)
+        self._init_weights()
             
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.stem(x)
@@ -522,57 +523,71 @@ class MaxVit(nn.Module):
         x = self.pool(x)
         x = torch.flatten(x, 1)
         return x
+    def _init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv3d):
+                nn.init.normal_(m.weight, std=0.02)
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
+            elif isinstance(m, nn.BatchNorm3d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, std=0.02)
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
 
 class Model(nn.Module):
     def __init__(
         self,
-        stem_channels,
         partition_size:tuple[int,int,int],
-        fusion_feedforward_dim:int,
+        downsample_depth_schedule: list[bool],
         mols_dim:int,
+        LACA_hidden_dim:int,
+        LACA_out_dim:int,
         hidden_fusion_dim:int,
         ):
         super().__init__()
         self.preNac = MaxVit(
             input_size=(16,128,128),
-            stem_channels=stem_channels,
+            stem_channels=16,
             partition_size=partition_size,
-            block_channels=[64,128,256,512],
+            block_channels=[16,32,64,128],
             block_layers=[2,2,5,2],
-            head_dim=32,
+            head_dim=8,
             stochastic_depth_prob=0.2,
             squeeze_ratio=0.25,
             expansion_ratio=4,
             mlp_ratio=4,
             attention_dropout=0.0,
             mlp_dropout=0.0,
-            downsample_depth_schedule=[True, True, False, False]
+            downsample_depth_schedule=downsample_depth_schedule
         )
         
         self.postNac = MaxVit(
             input_size=(16,128,128),
-            stem_channels=64,
-            partition_size=(1,4,4),
-            block_channels=[64,128,256,512],
+            stem_channels=16,
+            partition_size=partition_size,
+            block_channels=[16,32,64,128],
             block_layers=[2,2,5,2],
-            head_dim=32,
+            head_dim=8,
             stochastic_depth_prob=0.2,
             squeeze_ratio=0.25,
             expansion_ratio=4,
             mlp_ratio=4,
             attention_dropout=0.0,
             mlp_dropout=0.0,
-            downsample_depth_schedule=[True, True, False, False]
+            downsample_depth_schedule=downsample_depth_schedule
         )   
         self.dropout = nn.Dropout()
-        self.fusion = crossAttentionFusion(512, fusion_feedforward_dim, True)
+        self.fusion = latentAlignmentCrossAttentionFusion(128, LACA_hidden_dim, LACA_out_dim)
         self.mols_encoder = nn.Sequential(
             nn.Linear(2,mols_dim),
             nn.GELU(),
             nn.LayerNorm(mols_dim)
         )
         
-        self.fc1 = nn.Linear(512+mols_dim,hidden_fusion_dim)
+        self.fc1 = nn.Linear(LACA_out_dim+mols_dim,hidden_fusion_dim)
         self.ln = nn.LayerNorm(hidden_fusion_dim)
         self.fc2 = nn.Linear(hidden_fusion_dim,1)
     def forward(self,preNacVol,postNacVol,mols,mode:Literal["preNac","both"]):
@@ -588,4 +603,8 @@ class Model(nn.Module):
         x = self.ln(x)
         x = self.fc2(x)
         return x
+    
+
+    
+
 
