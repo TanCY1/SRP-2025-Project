@@ -1,0 +1,47 @@
+### Conv Mixer 128/6 trained on preNac and postNac, kernelsize = (1,9,9), patchsize = (8,8,8)
+|        |   ROC AUC |   Average Precision Score |   Sensitivity / Recall / TPR |   Specificity / TNR |   PPV / Precision |      NPV |   Accuracy |
+|:-------|----------:|--------------------------:|-----------------------------:|--------------------:|------------------:|---------:|-----------:|
+| preNac |  0.695554 |                  0.558633 |                     0.785215 |            0.579383 |          0.51173  | 0.829545 |   0.652326 |
+| Both   |  0.617869 |                  0.471568 |                     0.8      |            0.464286 |          0.482102 | 0.876818 |   0.584918 |
+
+### Conv Mixer 128/6 trained on preNac and postNac, kernelsize = (1,9,9), patchsize = (8,8,8) with Cross Attention Fusion
+|        |   ROC AUC |   Average Precision Score |   Sensitivity / Recall / TPR |   Specificity / TNR |   PPV / Precision |      NPV |   Accuracy |
+|:-------|----------:|--------------------------:|-----------------------------:|--------------------:|------------------:|---------:|-----------:|
+| preNac |  0.696357 |                  0.544979 |                     0.867473 |            0.479383 |          0.480868 | 0.867984 |   0.617134 |
+| Both   |  0.643487 |                  0.492605 |                     0.718548 |            0.583117 |          0.497264 | 0.788119 |   0.631703 |
+
+### Conv Mixer 128/6 trained on preNac and postNac, kernelsize = (1,9,9), patchsize = (8,8,8) with Latent Alignment Cross Attention Fusion with Latent Alignment outputting 128 features
+|        |   ROC AUC |   Average Precision Score |   Sensitivity / Recall / TPR |   Specificity / TNR |   PPV / Precision |     NPV |   Accuracy |
+|:-------|----------:|--------------------------:|-----------------------------:|--------------------:|------------------:|--------:|-----------:|
+| preNac |  0.70183  |                  0.58624  |                     0.8      |            0.573864 |          0.527656 | 0.87051 |   0.655164 |
+| Both   |  0.677435 |                  0.552512 |                     0.693548 |            0.664448 |          0.564036 | 0.79667 |   0.67565  |
+
+### SwinTransformerTiny with embed dim = 6 and patch size = (1,8,8) and window size = (2,2,2) with Cross Attention Fusion
+|        |   ROC AUC |   Average Precision Score |   Sensitivity / Recall / TPR |   Specificity / TNR |   PPV / Precision |      NPV |   Accuracy |
+|:-------|----------:|--------------------------:|-----------------------------:|--------------------:|------------------:|---------:|-----------:|
+| preNac |  0.696357 |                  0.567676 |                     0.751613 |            0.605114 |          0.542162 | 0.822377 |   0.657934 |
+| Both   |  0.6 81635 |                  0.559583 |                     0.718548 |            0.614935 |          0.518324 | 0.794813 |   0.652223 |
+
+### MaxViT-Mini, partition_size = (1,4,4) and downsample_depth_schedule = [True, True, False, False] with Cross Attention Fusion
+|        |   ROC AUC |   Average Precision Score |   Sensitivity / Recall / TPR |   Specificity / TNR |   PPV / Precision |      NPV |   Accuracy |
+|:-------|----------:|--------------------------:|-----------------------------:|--------------------:|------------------:|---------:|-----------:|
+| preNac |  0.706979 |                  0.585656 |                     0.74328  |            0.592532 |          0.514436 | 0.809722 |   0.646443 |
+| Both   |  0.686317 |                  0.560145 |                     0.726075 |            0.615179 |          0.533322 | 0.806392 |   0.655301 |
+
+### MaxViT-Mini, partition_size = (1,4,4) and downsample_depth_schedule = [True, True, False, False] with Latent Alignment Cross Attention Fusion with Latent Alignment outputting 128 features
+|        |   ROC AUC |   Average Precision Score |   Sensitivity / Recall / TPR |   Specificity / TNR |   PPV / Precision |      NPV |   Accuracy |
+|:-------|----------:|--------------------------:|-----------------------------:|--------------------:|------------------:|---------:|-----------:|
+| preNac |  0.697523 |                  0.576845 |                     0.817204 |            0.533685 |          0.501098 | 0.850471 |   0.634781 |
+| Both   |  0.683181 |                  0.556434 |                     0.721505 |            0.610958 |          0.50306  | 0.814876 |   0.649111 |
+
+### ConvMixerMaxVit 16/6, kernel size = (3,17,17), patch size = (4,4,4), downsample depth schedule = [True, False, False, False] with Cross Attention Fusion
+|        |   ROC AUC |   Average Precision Score |   Sensitivity / Recall / TPR |   Specificity / TNR |   PPV / Precision |      NPV |   Accuracy |
+|:-------|----------:|--------------------------:|-----------------------------:|--------------------:|------------------:|---------:|-----------:|
+| preNac |  0.695294 |                  0.563699 |                     0.818011 |            0.529302 |          0.494781 | 0.836953 |   0.63184  |
+| Both   |  0.678464 |                  0.539492 |                     0.783602 |            0.542532 |          0.512034 | 0.838225 |   0.629001 |
+
+### ConvMixerMaxVit 16/6, kernel size = (3,17,17), patch size = (4,4,4), downsample depth schedule = [True, False, False, False] with Latent Alignment Cross Attention Fusion with Latent Alignment outputting 128 features
+|        |   ROC AUC |   Average Precision Score |   Sensitivity / Recall / TPR |   Specificity / TNR |   PPV / Precision |      NPV |   Accuracy |
+|:-------|----------:|--------------------------:|-----------------------------:|--------------------:|------------------:|---------:|-----------:|
+| preNac |  0.701704 |                  0.58602  |                     0.826344 |            0.565584 |          0.512771 | 0.855994 |   0.658037 |
+| Both   |  0.686586 |                  0.556957 |                     0.785484 |            0.570049 |          0.505233 | 0.82525  |   0.646443 |

@@ -129,18 +129,19 @@ class Model(nn.Module):
         mols_dim,
         hidden_fusion_dim
     ):
+        super().__init__()
         self.preNac = ConvNeXtV2(6, depths, dims)
         self.postNac = ConvNeXtV2(6, depths, dims)
         
         self.dropout = nn.Dropout()
-        self.fusion = crossAttentionFusion(128, fusion_feedforward_dim, True)
+        self.fusion = crossAttentionFusion(dims[-1], fusion_feedforward_dim, True)
         self.mols_encoder = nn.Sequential(
             nn.Linear(2,mols_dim),
             nn.GELU(),
             nn.LayerNorm(mols_dim)
         )
         
-        self.fc1 = nn.Linear(128+mols_dim,hidden_fusion_dim)
+        self.fc1 = nn.Linear(dims[-1]+mols_dim,hidden_fusion_dim)
         self.ln = nn.LayerNorm(hidden_fusion_dim)
         self.fc2 = nn.Linear(hidden_fusion_dim,1)
     def forward(self,preNacVol,postNacVol,mols,mode:Literal["preNac","both"]):
