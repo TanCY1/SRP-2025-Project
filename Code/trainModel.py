@@ -49,11 +49,11 @@ def trainModel(model:nn.Module,
                 volumes = torch.cat((T0_volumes,T3_volumes),dim=1)
                 logits = model(volumes,mols,**trainKwargs)
             else:
-                labels = labels.to(dtype=torch.float32)
                 logits = model(T0_volumes,T3_volumes,mols,**trainKwargs)
             
             if out_features==1:
                 logits = logits.squeeze(1)
+                labels = labels.to(dtype=torch.float32)
             loss:torch.Tensor = loss_fn(logits,labels)
             loss.backward()
             optimiser.step()
